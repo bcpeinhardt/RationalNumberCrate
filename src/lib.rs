@@ -1,6 +1,6 @@
 //! Ben's Naive Rational Numbers Crate | Last Updated 2/3/2021
 //!
-//! 
+//!
 //! This crate serves as a basic implementation of a fraction. It aims to behave exactly
 //! how you expect it to, and leave as many decisions about the structure as possible up to you.
 //!
@@ -157,7 +157,7 @@ where
     ///        Rational::from(2, 3).unwrap()
     ///    );
     /// ```
-    /// 
+    ///
     pub fn abs(&self) -> Self {
         let mut num = self.n;
         let mut den = self.d;
@@ -250,6 +250,23 @@ where
             return Some(Ordering::Equal);
         }
         None
+    }
+}
+
+impl<T> std::fmt::Display for Rational<T>
+where
+    T: Add<Output = T>
+        + Mul<Output = T>
+        + Sub<Output = T>
+        + Rem<Output = T>
+        + Div<Output = T>
+        + PartialEq
+        + PartialOrd
+        + std::fmt::Display
+        + Copy,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(f, "{}/{}", self.n, self.d)
     }
 }
 
@@ -501,11 +518,11 @@ mod helpers {
 /// to make writing rationals easier. It skips the unwrap for you, so if you are are writing numbers,
 /// use the macro. If you are parsing numbers, use the Rational::from() constructor so that you get
 /// the error handling on zero denominators.
-/// 
+///
 /// # Examples
 /// ```
 /// use bens_naive_rational_numbers::{Rational, rat};
-/// 
+///
 /// assert_eq!(rat![2, 3], Rational::from(2, 3).unwrap());
 /// assert_eq!(rat![5], Rational::from(5, 1).unwrap());
 /// assert_eq!(rat![10u32, 12u32], Rational::from(5u32, 6u32).unwrap());
@@ -638,6 +655,11 @@ mod trait_implementation_tests {
 
         assert!(Rational::from(-2, 3).unwrap() < Rational::from(2, 4).unwrap());
         assert!(Rational::from(1, 3).unwrap() > Rational::from(-2, 4).unwrap());
+    }
+
+    #[test]
+    fn std_fmt_display_test() {
+        assert_eq!(format!("{}",rat![2,3]), "2/3");
     }
 }
 
