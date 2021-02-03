@@ -1,7 +1,14 @@
 //! Ben's Naive Rational Numbers Crate | Last Updated 2/2/2021
-//! This crate serves as a basic implementation of a rational number structure. It aims to behave exactly
-//! how you expect it to, and as many decisions about the structure as possible up to you.
+//! This crate serves as a basic implementation of a fraction. It aims to behave exactly
+//! how you expect it to, and leave as many decisions about the structure as possible up to you.
 //!
+//! A rational number is defined as any number which can be represented as an integer divided by another
+//! (but non zero) integer. This crate is MUCH less strict than that. All that is required to
+//! create a "rational number" which is actually just a fraction is that your type T implement the following traits:
+//! Add<Output = T> + Mul<Output = T> + Sub<Output = T> + Rem<Output = T> + Div<Output = T> + PartialEq + PartialOrd + Copy
+//! 
+//! This is not a time consuming list to implement. Any type that is used regularly in computation will have these implemented.
+//! 
 
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Rem, Sub, SubAssign};
 
@@ -14,8 +21,8 @@ pub enum ComputationErr {
 /// Make them signed types if you want to have a negative number.
 /// I know it seems like the fraction should be two unsigned ints and a sign flag but keep in mind that this is effectively a definition of
 /// a rational number: An integer (which can be negative) divided by a non zero integer (which can also be negative)
-#[derive(Debug)]
-struct Rational<T>
+#[derive(Debug, Clone, Copy)]
+pub struct Rational<T>
 where
     T: Add<Output = T>
         + Mul<Output = T>
@@ -23,6 +30,7 @@ where
         + Rem<Output = T>
         + Div<Output = T>
         + PartialEq
+        + PartialOrd
         + Copy,
 {
     n: T,
@@ -41,7 +49,21 @@ where
 {
     // Public methods and associated functions
 
-    /// The constructor for a rational takes a numerator and denominator
+    /// The constructor for a rational: takes a numerator and denominator
+    /// The type of the rational number is inferred from the input.
+    ///
+    /// # Examples
+    /// ```
+    /// use bens_fractions::Rational as Rat;
+    ///
+    /// let one_third = Rat::from(1i64, 3i64).unwrap();
+    /// ```
+    ///
+    /// The type of the numerator must be the same as the type of the denominator.
+    ///
+    /// The constructor returns a result solely for the purpose of preventing people from creating
+    /// fractions with zero denominators, because they are not by definition Rational.
+    ///
     pub fn from(n: T, d: T) -> Result<Self, ComputationErr> {
         use helpers::simplify_a_fraction;
 
@@ -175,6 +197,25 @@ where
         }
         None
     }
+}
+
+impl<T> Rem for Rational<T> where T: Add<Output = T>
++ Mul<Output = T>
++ Sub<Output = T>
++ Rem<Output = T>
++ Div<Output = T>
++ PartialEq
++ PartialOrd
++ Copy,{
+    type Output = Rational<T>;
+    fn rem(self,  rhs: Rational<T>) -> <Self as Rem<Rational<T>>>::Output { 
+        let mut a = self.abs();
+        let b = rhs.abs();
+        while a > b {
+            a -= b;
+        }
+        a
+     }
 }
 
 // Operator overloads
@@ -359,7 +400,13 @@ mod helpers {
 
     pub fn simplify_a_fraction<T>(a: T, b: T) -> Result<(T, T), ComputationErr>
     where
-        T: Sub<Output = T> + Rem<Output = T> + Div<Output = T> + PartialEq + PartialOrd + Copy + Add<Output = T>,
+        T: Sub<Output = T>
+            + Rem<Output = T>
+            + Div<Output = T>
+            + PartialEq
+            + PartialOrd
+            + Copy
+            + Add<Output = T>,
     {
         let zero = b - b;
         if b == zero {
@@ -372,7 +419,7 @@ mod helpers {
     // Greatest Common Divisor
     pub fn gcd<T>(a: T, b: T) -> T
     where
-        T: Sub<Output = T> + Rem<Output = T> + PartialEq + Copy + PartialOrd + Add<Output=T>,
+        T: Sub<Output = T> + Rem<Output = T> + PartialEq + Copy + PartialOrd + Add<Output = T>,
     {
         let zero = b - b;
         if a == zero {
@@ -385,7 +432,14 @@ mod helpers {
     // Least Common Denominator
     pub fn lcd<T>(a: T, b: T) -> Result<T, ComputationErr>
     where
-        T: Sub<Output = T> + Div<Output = T> + Rem<Output = T> + Mul<Output = T> + PartialEq + PartialOrd + Add<Output=T> + Copy,
+        T: Sub<Output = T>
+            + Div<Output = T>
+            + Rem<Output = T>
+            + Mul<Output = T>
+            + PartialEq
+            + PartialOrd
+            + Add<Output = T>
+            + Copy,
     {
         let zero = b - b;
         if b == zero {
@@ -395,7 +449,10 @@ mod helpers {
         }
     }
 
-    fn single_val_abs<T>(val: T) -> T where T: Sub<Output=T> + PartialOrd + Add<Output=T> + Copy {
+    fn single_val_abs<T>(val: T) -> T
+    where
+        T: Sub<Output = T> + PartialOrd + Add<Output = T> + Copy,
+    {
         let zero = val - val;
         if val < zero {
             return val - (val + val);
@@ -430,7 +487,7 @@ mod helper_tests {
 
         assert_eq!(gcd(-10, 15), 5);
         assert_eq!(gcd(15, -15), 15);
-        assert_eq!(gcd(-36, -24), 12); 
+        assert_eq!(gcd(-36, -24), 12);
     }
 
     #[test]
@@ -633,5 +690,16 @@ mod methods_tests {
             Rational::from(2, 3).unwrap().abs(),
             Rational::from(2, 3).unwrap()
         );
+    }
+}
+
+#[cfg(tests)]
+mod extras {
+    use super::Rational;
+
+    #[test]
+    fn rational_from_rationals() {
+        let two = Rational::from(Rational::from(1, 2).unwrap(), Rational::from(1, 4).unwrap());
+        assert_eq!(two, Rational::from(2, 1).unwrap());
     }
 }
