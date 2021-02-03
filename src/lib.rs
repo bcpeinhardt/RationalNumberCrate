@@ -14,7 +14,7 @@ pub enum ComputationErr {
 /// Make them signed types if you want to have a negative number.
 /// I know it seems like the fraction should be two unsigned ints and a sign flag but keep in mind that this is effectively a definition of
 /// a rational number: An integer (which can be negative) divided by a non zero integer (which can also be negative)
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 struct Rational<T>
 where
     T: Add<Output = T>
@@ -36,6 +36,7 @@ where
         + Rem<Output = T>
         + Div<Output = T>
         + PartialEq
+        + PartialOrd
         + Copy,
 {
     // Public methods and associated functions
@@ -54,6 +55,48 @@ where
         }
     }
 
+    /// Raises the fraction to the n power.
+    /// # Panics
+    /// This function will overflow based on the inner data type
+    /// If your fraction is based on u8, don't raise it to the 30th power.
+    pub fn pow(&self, n: u32) -> Self {
+        use helpers::simplify_a_fraction;
+
+        if n == 0 {
+            return Rational::from(self.n, self.n).unwrap();
+        }
+
+        let one = self.n / self.n;
+        let mut num = one;
+        let mut den = one;
+
+        for _ in 0..n {
+            num = num * self.n;
+            den = den * self.d;
+            if let Ok((a, b)) = simplify_a_fraction(num, den) {
+                num = a;
+                den = b;
+            }
+        }
+        Rational::from(num, den).unwrap()
+    }
+
+    /// If the fraction has a negative numerator or denominator, it becomes positive.
+    pub fn abs(&self) -> Self {
+        let mut num = self.n;
+        let mut den = self.d;
+
+        let zero = self.d - self.d;
+        if num < zero {
+            num = num - (num + num);
+        }
+        if den < zero {
+            den = den - (den + den);
+        }
+
+        Rational::from(num, den).unwrap()
+    }
+
     // Internal methods
 
     // Call this guy any time we operate non trivially on the fraction
@@ -64,6 +107,73 @@ where
             self.n = a;
             self.d = b;
         }
+    }
+}
+
+// Trait implementations
+
+impl<T> PartialEq for Rational<T>
+where
+    T: Add<Output = T>
+        + Mul<Output = T>
+        + Sub<Output = T>
+        + Rem<Output = T>
+        + Div<Output = T>
+        + PartialEq
+        + PartialOrd
+        + Copy,
+{
+    fn eq(&self, rhs: &Self) -> bool {
+        // I'm having a lot of trouble Identifying negatives with generics, and don't want to require a negative trait
+        // so this is going to be a little hacky
+
+        // If "a/b + a/b case, then num == num && denom == denom"
+        // If -a/b + a/-b case, then num + num = zero, and denom + denom = zero
+
+        let zero = self.n - self.n;
+        (self.n == rhs.n && self.d == rhs.d) || (self.n + rhs.n == zero && self.d + rhs.d == zero)
+    }
+}
+
+impl<T> PartialOrd for Rational<T>
+where
+    T: Add<Output = T>
+        + Mul<Output = T>
+        + Sub<Output = T>
+        + Rem<Output = T>
+        + Div<Output = T>
+        + PartialEq
+        + PartialOrd
+        + Copy,
+{
+    fn partial_cmp(&self, rhs: &Rational<T>) -> Option<std::cmp::Ordering> {
+        use helpers::lcd;
+        use std::cmp::Ordering;
+
+        let zero = self.n - self.n;
+        match (
+            (self.n < zero && self.d > zero) || (self.n > zero && self.d < zero),
+            (rhs.n < zero && rhs.d > zero) || (rhs.n > zero && rhs.d < zero),
+        ) {
+            // (neg/pos || pos/neg), (neg/pos || pos/neg)
+            (true, false) => {
+                return Some(Ordering::Less);
+            }
+            (false, true) => {
+                return Some(Ordering::Greater);
+            }
+            (_, _) => {}
+        }
+
+        let lcd = lcd(self.d, rhs.d).unwrap();
+        if (self.n * (lcd / self.d)) < (rhs.n * (lcd / rhs.d)) {
+            return Some(Ordering::Less);
+        } else if (self.n * (lcd / self.d)) > (rhs.n * (lcd / rhs.d)) {
+            return Some(Ordering::Greater);
+        } else if (self.n * (lcd / self.d)) == (rhs.n * (lcd / rhs.d)) {
+            return Some(Ordering::Equal);
+        }
+        None
     }
 }
 
@@ -79,6 +189,7 @@ where
         + Rem<Output = T>
         + Div<Output = T>
         + PartialEq
+        + PartialOrd
         + Copy,
 {
     type Output = Rational<T>;
@@ -102,6 +213,7 @@ where
         + Rem<Output = T>
         + Div<Output = T>
         + PartialEq
+        + PartialOrd
         + Copy,
 {
     fn add_assign(&mut self, rhs: Rational<T>) {
@@ -125,6 +237,7 @@ where
         + Rem<Output = T>
         + Div<Output = T>
         + PartialEq
+        + PartialOrd
         + Copy,
 {
     type Output = Rational<T>;
@@ -148,6 +261,7 @@ where
         + Rem<Output = T>
         + Div<Output = T>
         + PartialEq
+        + PartialOrd
         + Copy,
 {
     fn sub_assign(&mut self, rhs: Self) {
@@ -171,6 +285,7 @@ where
         + Rem<Output = T>
         + Div<Output = T>
         + PartialEq
+        + PartialOrd
         + Copy,
 {
     type Output = Rational<T>;
@@ -189,6 +304,7 @@ where
         + Rem<Output = T>
         + Div<Output = T>
         + PartialEq
+        + PartialOrd
         + Copy,
 {
     fn mul_assign(&mut self, rhs: Self) {
@@ -208,6 +324,7 @@ where
         + Rem<Output = T>
         + Div<Output = T>
         + PartialEq
+        + PartialOrd
         + Copy,
 {
     type Output = Rational<T>;
@@ -226,6 +343,7 @@ where
         + Rem<Output = T>
         + Div<Output = T>
         + PartialEq
+        + PartialOrd
         + Copy,
 {
     fn div_assign(&mut self, rhs: Self) {
@@ -241,7 +359,7 @@ mod helpers {
 
     pub fn simplify_a_fraction<T>(a: T, b: T) -> Result<(T, T), ComputationErr>
     where
-        T: Sub<Output = T> + Rem<Output = T> + Div<Output = T> + PartialEq + Copy,
+        T: Sub<Output = T> + Rem<Output = T> + Div<Output = T> + PartialEq + PartialOrd + Copy + Add<Output = T>,
     {
         let zero = b - b;
         if b == zero {
@@ -254,26 +372,35 @@ mod helpers {
     // Greatest Common Divisor
     pub fn gcd<T>(a: T, b: T) -> T
     where
-        T: Sub<Output = T> + Rem<Output = T> + PartialEq + Copy,
+        T: Sub<Output = T> + Rem<Output = T> + PartialEq + Copy + PartialOrd + Add<Output=T>,
     {
         let zero = b - b;
         if a == zero {
             return b;
         } else {
-            return gcd(b % a, a);
+            return single_val_abs(gcd(b % a, a));
         }
     }
 
     // Least Common Denominator
     pub fn lcd<T>(a: T, b: T) -> Result<T, ComputationErr>
     where
-        T: Sub<Output = T> + Div<Output = T> + Rem<Output = T> + Mul<Output = T> + PartialEq + Copy,
+        T: Sub<Output = T> + Div<Output = T> + Rem<Output = T> + Mul<Output = T> + PartialEq + PartialOrd + Add<Output=T> + Copy,
     {
         let zero = b - b;
         if b == zero {
             return Err(ComputationErr::DivByZeroErr);
         } else {
-            return Ok(a * b / gcd(a, b));
+            return Ok(single_val_abs(a * b / gcd(a, b)));
+        }
+    }
+
+    fn single_val_abs<T>(val: T) -> T where T: Sub<Output=T> + PartialOrd + Add<Output=T> + Copy {
+        let zero = val - val;
+        if val < zero {
+            return val - (val + val);
+        } else {
+            return val;
         }
     }
 }
@@ -284,12 +411,37 @@ mod helper_tests {
     use super::helpers::*;
 
     #[test]
-    fn simplify_algorithm_works() {
+    fn simplify_algorithm_works_positives() {
+        // Positives
         assert_eq!(simplify_a_fraction(10, 10).unwrap(), (1, 1));
         assert_eq!(simplify_a_fraction(1, 10).unwrap(), (1, 10));
         assert_eq!(simplify_a_fraction(84, 49).unwrap(), (12, 7));
         assert_eq!(simplify_a_fraction(50, 25).unwrap(), (2, 1));
+
+        // Div by zero err
         assert!(simplify_a_fraction(17, 0).is_err());
+    }
+
+    #[test]
+    fn gcd_works() {
+        assert_eq!(gcd(10, 15), 5);
+        assert_eq!(gcd(15, 15), 15);
+        assert_eq!(gcd(36, 24), 12);
+
+        assert_eq!(gcd(-10, 15), 5);
+        assert_eq!(gcd(15, -15), 15);
+        assert_eq!(gcd(-36, -24), 12); 
+    }
+
+    #[test]
+    fn lcd_works() {
+        assert_eq!(lcd(10, 15).unwrap(), 30);
+        assert_eq!(lcd(15, 15).unwrap(), 15);
+        assert_eq!(lcd(36, 24).unwrap(), 72);
+
+        assert_eq!(lcd(-10, 15).unwrap(), 30);
+        assert_eq!(lcd(15, -15).unwrap(), 15);
+        assert_eq!(lcd(-36, -24).unwrap(), 72);
     }
 }
 
@@ -330,6 +482,26 @@ mod rational_construction_tests {
     #[test]
     fn constructing_rational_with_zero_denominator_is_err() {
         assert!(Rational::from(77u64, 0u64).is_err());
+    }
+}
+
+#[cfg(test)]
+mod trait_implementation_tests {
+    use super::Rational;
+
+    #[test]
+    fn partial_eq_trait_test() {
+        assert!(Rational::from(1, 2).unwrap() == Rational::from(2, 4).unwrap());
+        assert!(Rational::from(1, -2).unwrap() == Rational::from(-2, 4).unwrap());
+    }
+
+    #[test]
+    fn partial_ord_trait_test() {
+        assert!(Rational::from(2, 3).unwrap() > Rational::from(2, 4).unwrap());
+        assert!(Rational::from(1, 3).unwrap() < Rational::from(2, 4).unwrap());
+
+        assert!(Rational::from(-2, 3).unwrap() < Rational::from(2, 4).unwrap());
+        assert!(Rational::from(1, 3).unwrap() > Rational::from(-2, 4).unwrap());
     }
 }
 
@@ -426,5 +598,40 @@ mod operator_overload_tests {
         let two_thirds = Rational::from(2, 3).unwrap();
         let two_5ths = Rational::from(2, 5).unwrap();
         assert_eq!(two_thirds / two_5ths, Rational::from(5, 3).unwrap());
+    }
+}
+
+#[cfg(test)]
+mod methods_tests {
+
+    use super::Rational;
+
+    #[test]
+    fn pow() {
+        let two_thirds = Rational::from(-2, -3).unwrap();
+        assert_eq!(two_thirds.pow(3), Rational::from(8, 27).unwrap());
+        assert_eq!(two_thirds.pow(2), Rational::from(4, 9).unwrap());
+        assert_eq!(two_thirds.pow(1), Rational::from(2, 3).unwrap());
+        assert_eq!(two_thirds.pow(0), Rational::from(1, 1).unwrap());
+    }
+
+    #[test]
+    fn abs() {
+        assert_eq!(
+            Rational::from(-2, 3).unwrap().abs(),
+            Rational::from(2, 3).unwrap()
+        );
+        assert_eq!(
+            Rational::from(-2, -3).unwrap().abs(),
+            Rational::from(2, 3).unwrap()
+        );
+        assert_eq!(
+            Rational::from(2, -3).unwrap().abs(),
+            Rational::from(2, 3).unwrap()
+        );
+        assert_eq!(
+            Rational::from(2, 3).unwrap().abs(),
+            Rational::from(2, 3).unwrap()
+        );
     }
 }
