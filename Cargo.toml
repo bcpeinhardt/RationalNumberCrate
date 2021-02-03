@@ -5,6 +5,7 @@ authors = ["bcpeinhardt <benjaminpeinhardt@gmail.com>"]
 edition = "2018"
 source = "https://github.com/bcpeinhardt/RationalNumberCrate.git"
 description = "A naive implementation of a rational number."
+license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
