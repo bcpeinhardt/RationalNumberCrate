@@ -1,11 +1,11 @@
 //! Ben's Naive Rational Numbers Crate | Last Updated 2/3/2021
-//! 
+//!
 //! This crate serves as a basic implementation of a fraction. It aims to behave exactly
 //! how you expect it to, and leave as many decisions about the structure as possible up to you.
-//! 
-//! +,+=,-,-=,*,*=,/,/= are all overloaded and .abs() and .pow(u32) methods are provided.
+//!
+//! +, +=, -, -=, *, *=, /, /= are all overloaded and .abs() and .pow(u32) methods are provided.
 //! This data structure is exactly as likely to overflow as the datatype you base it on, so
-//! be careful with pow(). There is also a rat![] macro. 
+//! be careful with pow(). There is also a rat![] macro.
 //!
 //! A rational number is defined as any number which can be represented as an integer divided by another
 //! (but non zero) integer. This crate is MUCH less strict than that. All that is required to
@@ -13,21 +13,22 @@
 //! Add<Output = T> + Mul<Output = T> + Sub<Output = T> + Rem<Output = T> + Div<Output = T> + PartialEq + PartialOrd + Copy
 //!
 //! That being said, please do not try to make a rational number out of floats, it will break everything, because many of
-//! the algorithms involved in manipulation of the fraction require exact values (think gcd). 
-//! 
+//! the algorithms involved in manipulation of the fraction require exact values (think gcd).
+//!
 //! This crate is designed to be used with primative data types for exact math operations. In the future I hope to make it
 //! more robust so that it stands up to your custom data types.
-//! 
+//!
 //! # Examples
 //! ```
-//! use bens_naive_rational_numbers::{Rational,rat};
-//! 
+//! use bens_naive_rational_number::{Rational,rat};
+//!
 //! assert_eq!(rat![8i64, 32i64], Rational::from(8i64, 32i64).unwrap());
 //! ```
 //!
 
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Rem, Sub, SubAssign};
 
+/// This is just how I keep track of the idiots who divide by zero, your error will be a String.
 #[derive(Debug)]
 pub enum ComputationErr {
     DivByZeroErr,
@@ -70,7 +71,7 @@ where
     ///
     /// # Examples
     /// ```
-    /// use bens_naive_rational_numbers::Rational as Rat;
+    /// use bens_naive_rational_number::Rational as Rat;
     ///
     /// let one_third = Rat::from(1i64, 3i64).unwrap();
     /// ```
@@ -81,7 +82,7 @@ where
     /// fractions with zero denominators, because they are not by definition Rational. If this
     /// is too clunky for you, consider using the provided macro, which unwraps by itself.
     ///
-    pub fn from(n: T, d: T) -> Result<Self, ComputationErr> {
+    pub fn from(n: T, d: T) -> Result<Self, String> {
         use helpers::simplify_a_fraction;
 
         match simplify_a_fraction(n, d) {
@@ -89,15 +90,27 @@ where
                 return Ok(Rational { n: a, d: b });
             }
             Err(error) => {
-                return Err(error);
+                return Err(format!("{:?}", error));
             }
         }
     }
 
     /// Raises the fraction to the n power.
     /// # Panics
-    /// This function will overflow based on the inner data type
+    /// This function will overflow based on the inner data type.
     /// If your fraction is based on u8, don't raise it to the 30th power.
+    /// # Examples
+    /// ```
+    /// use bens_naive_rational_number::{Rational, rat};
+    ///
+    /// let two_thirds = Rational::from(-2, -3).unwrap();
+    ///
+    /// assert_eq!(two_thirds.pow(3), rat![8,27]);
+    /// assert_eq!(two_thirds.pow(2), rat![4,9]);
+    /// assert_eq!(two_thirds.pow(1), rat![2,3]);
+    /// assert_eq!(two_thirds.pow(0), rat![1]);
+    ///
+    /// ```
     pub fn pow(&self, n: u32) -> Self {
         use helpers::simplify_a_fraction;
 
@@ -121,6 +134,29 @@ where
     }
 
     /// Takes the absolute value of the fraction. Numerator and denominator become positive.
+    ///
+    /// # Examples
+    /// ```
+    /// use bens_naive_rational_number::Rational;
+    ///
+    /// assert_eq!(
+    ///        Rational::from(-2, 3).unwrap().abs(),
+    ///        Rational::from(2, 3).unwrap()
+    ///    );
+    ///    assert_eq!(
+    ///        Rational::from(-2, -3).unwrap().abs(),
+    ///        Rational::from(2, 3).unwrap()
+    ///    );
+    ///    assert_eq!(
+    ///        Rational::from(2, -3).unwrap().abs(),
+    ///        Rational::from(2, 3).unwrap()
+    ///    );
+    ///    assert_eq!(
+    ///        Rational::from(2, 3).unwrap().abs(),
+    ///        Rational::from(2, 3).unwrap()
+    ///    );
+    /// ```
+    /// 
     pub fn abs(&self) -> Self {
         let mut num = self.n;
         let mut den = self.d;
@@ -463,7 +499,17 @@ mod helpers {
 /// The declarative macro is as simple as you can imagine it. The only purpose of the macro is
 /// to make writing rationals easier. It skips the unwrap for you, so if you are are writing numbers,
 /// use the macro. If you are parsing numbers, use the Rational::from() constructor so that you get
-/// the error handling on zero denominators. 
+/// the error handling on zero denominators.
+/// 
+/// # Examples
+/// ```
+/// use bens_naive_rational_number::{Rational, rat};
+/// 
+/// assert_eq!(rat![2, 3], Rational::from(2, 3).unwrap());
+/// assert_eq!(rat![5], Rational::from(5, 1).unwrap());
+/// assert_eq!(rat![10u32, 12u32], Rational::from(5u32, 6u32).unwrap());
+/// assert_eq!(rat![12i64, -6i64], Rational::from(-2i64, 1i64).unwrap());
+/// ```
 #[macro_export]
 macro_rules! rat {
     ($num:expr, $den:expr) => {{
@@ -480,8 +526,8 @@ mod macro_tests {
 
     #[test]
     fn basic_macro_usage() {
-        assert_eq!(rat![2,3], Rational::from(2, 3).unwrap());
-        assert_eq!(rat![5], Rational::from(5,1).unwrap());
+        assert_eq!(rat![2, 3], Rational::from(2, 3).unwrap());
+        assert_eq!(rat![5], Rational::from(5, 1).unwrap());
         assert_eq!(rat![10u32, 12u32], Rational::from(5u32, 6u32).unwrap());
         assert_eq!(rat![12i64, -6i64], Rational::from(-2i64, 1i64).unwrap());
     }
@@ -490,7 +536,7 @@ mod macro_tests {
     fn macros_with_variables() {
         let two = 2;
         let three = 3;
-        assert_eq!(rat![two,three], Rational::from(2,3).unwrap());
+        assert_eq!(rat![two, three], Rational::from(2, 3).unwrap());
     }
 }
 
@@ -724,5 +770,3 @@ mod methods_tests {
         );
     }
 }
-
-

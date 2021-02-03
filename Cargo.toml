@@ -1,8 +1,10 @@
 [package]
-name = "bens_naive_rational_numbers"
-version = "0.1.0"
+name = "bens_naive_rational_number"
+version = "0.1.6"
 authors = ["bcpeinhardt <benjaminpeinhardt@gmail.com>"]
 edition = "2018"
+source = "https://github.com/bcpeinhardt/RationalNumberCrate.git"
+description = "A naive implementation of a rational number."
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
