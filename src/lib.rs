@@ -1,5 +1,6 @@
 //! Ben's Naive Rational Numbers Crate | Last Updated 2/3/2021
 //!
+//! 
 //! This crate serves as a basic implementation of a fraction. It aims to behave exactly
 //! how you expect it to, and leave as many decisions about the structure as possible up to you.
 //!
