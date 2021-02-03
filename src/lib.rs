@@ -20,7 +20,7 @@
 //!
 //! # Examples
 //! ```
-//! use bens_naive_rational_number::{Rational,rat};
+//! use bens_naive_rational_numbers::{Rational,rat};
 //!
 //! assert_eq!(rat![8i64, 32i64], Rational::from(8i64, 32i64).unwrap());
 //! ```
@@ -71,7 +71,7 @@ where
     ///
     /// # Examples
     /// ```
-    /// use bens_naive_rational_number::Rational as Rat;
+    /// use bens_naive_rational_numbers::Rational as Rat;
     ///
     /// let one_third = Rat::from(1i64, 3i64).unwrap();
     /// ```
@@ -101,7 +101,7 @@ where
     /// If your fraction is based on u8, don't raise it to the 30th power.
     /// # Examples
     /// ```
-    /// use bens_naive_rational_number::{Rational, rat};
+    /// use bens_naive_rational_numbers::{Rational, rat};
     ///
     /// let two_thirds = Rational::from(-2, -3).unwrap();
     ///
@@ -137,7 +137,7 @@ where
     ///
     /// # Examples
     /// ```
-    /// use bens_naive_rational_number::Rational;
+    /// use bens_naive_rational_numbers::Rational;
     ///
     /// assert_eq!(
     ///        Rational::from(-2, 3).unwrap().abs(),
@@ -503,7 +503,7 @@ mod helpers {
 /// 
 /// # Examples
 /// ```
-/// use bens_naive_rational_number::{Rational, rat};
+/// use bens_naive_rational_numbers::{Rational, rat};
 /// 
 /// assert_eq!(rat![2, 3], Rational::from(2, 3).unwrap());
 /// assert_eq!(rat![5], Rational::from(5, 1).unwrap());

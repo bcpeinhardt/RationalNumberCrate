@@ -1,5 +1,5 @@
 [package]
-name = "bens_naive_rational_number"
+name = "bens_naive_rational_numbers"
 version = "0.1.6"
 authors = ["bcpeinhardt <benjaminpeinhardt@gmail.com>"]
 edition = "2018"
