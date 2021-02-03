@@ -216,28 +216,6 @@ where
     }
 }
 
-impl<T> Rem for Rational<T>
-where
-    T: Add<Output = T>
-        + Mul<Output = T>
-        + Sub<Output = T>
-        + Rem<Output = T>
-        + Div<Output = T>
-        + PartialEq
-        + PartialOrd
-        + Copy,
-{
-    type Output = Rational<T>;
-    fn rem(self, rhs: Rational<T>) -> <Self as Rem<Rational<T>>>::Output {
-        let mut a = self.abs();
-        let b = rhs.abs();
-        while a > b {
-            a -= b;
-        }
-        a
-    }
-}
-
 // Operator overloads
 
 /// Overload + operator for rational.
