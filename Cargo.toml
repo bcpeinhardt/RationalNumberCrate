@@ -1,6 +1,6 @@
 [package]
 name = "bens_naive_rational_numbers"
-version = "0.1.6"
+version = "0.1.0"
 authors = ["bcpeinhardt <benjaminpeinhardt@gmail.com>"]
 edition = "2018"
 source = "https://github.com/bcpeinhardt/RationalNumberCrate.git"
